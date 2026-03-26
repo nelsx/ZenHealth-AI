@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenHealth AI — Sign In</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .tab-row{display:flex;background:var(--bg3);border-radius:var(--r-s);padding:3px;margin-bottom:18px;border:1px solid var(--border)}
+    .tab{flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-2)}
+    .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+    .form-section{display:none}
+    .form-section.visible{display:block}
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card" id="auth-card">
+      <div class="auth-logo">
+        <div class="logo-icon">🩺</div>
+        <span>ZenHealth<em>AI</em></span>
+      </div>
+
+      <div class="tab-row">
+        <div class="tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</div>
+        <div class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+      </div>
+
+      <div class="form-section visible" id="form-signin">
+        <div class="auth-title">Welcome back</div>
+        <div class="auth-subtitle">Sign in to your Zen dashboard</div>
+
+        <div class="input-wrap">
+          <label class="input-label">Email</label>
+          <input class="input" type="email" id="signin-email" placeholder="you@example.com" />
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Password</label>
+          <input class="input" type="password" id="signin-password" placeholder="••••••••" />
+        </div>
+
+        <div class="input-wrap" id="signin-2fa-wrap" style="display:none">
+          <label class="input-label">Google Authenticator code</label>
+          <input class="input" type="text" inputmode="numeric" id="signin-2fa" placeholder="123456" />
+          <div style="font-size:12px;color:var(--text-3)">Enter the 6‑digit code from Google Authenticator.</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="doSignIn()">Sign In →</button>
+      </div>
+
+      <div class="form-section" id="form-signup">
+        <div class="auth-title">Create account</div>
+        <div class="auth-subtitle">Your personal AI health companion</div>
+
+        <div class="input-wrap">
+          <label class="input-label">Full Name</label>
+          <input class="input" type="text" id="signup-name" placeholder="Your name" />
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Email</label>
+          <input class="input" type="email" id="signup-email" placeholder="you@example.com" />
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Password</label>
+          <input class="input" type="password" id="signup-password" placeholder="Min 6 characters" />
+        </div>
+
+        <button class="btn btn-primary" onclick="doSignUp()">Create account →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const currentUser = AuthDB.getCurrentUser();
+    if (currentUser) window.location.href = 'dashboard.html';
+
+    let pending2FA = null;
+
+    function switchTab(tab) {
+      document.getElementById('tab-signin').classList.toggle('active', tab === 'signin');
+      document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+      document.getElementById('form-signin').classList.toggle('visible', tab === 'signin');
+      document.getElementById('form-signup').classList.toggle('visible', tab === 'signup');
+    }
+
+    async function doSignIn() {
+      const email = document.getElementById('signin-email').value.trim();
+      const password = document.getElementById('signin-password').value;
+      if (!email || !password) { showToast('Please fill all fields', 'error'); return; }
+
+      if (!email.includes('@')) { showToast('Please enter a valid email (must include @)', 'error'); return; }
+      if (email !== email.toLowerCase()) { showToast('Email must be lowercase (no caps)', 'error'); return; }
+
+      try {
+        const user = AuthDB.getUserByEmail(email);
+        if (!user || user.password !== password) {
+          showToast('Invalid email or password', 'error');
+          return;
+        }
+
+        if (user.twofaEnabled) {
+          pending2FA = user;
+          document.getElementById('signin-2fa-wrap').style.display = 'block';
+          const code = document.getElementById('signin-2fa').value.trim();
+          if (!code) {
+            showToast('Enter your 2FA code to continue', 'info');
+            return;
+          }
+          const ok = await verifyTotp(user.twofaSecret, code);
+          if (!ok) {
+            showToast('Invalid 2FA code', 'error');
+            return;
+          }
+        }
+
+        AuthDB.setCurrentUser(user);
+        showToast('Welcome back, ' + (user.name || 'friend') + '!');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function doSignUp() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      if (!name || !email || !password) { showToast('Please fill all fields', 'error'); return; }
+      if (!email.includes('@')) { showToast('Please enter a valid email (must include @)', 'error'); return; }
+      if (email !== email.toLowerCase()) { showToast('Email must be lowercase (no caps)', 'error'); return; }
+      if (password.length < 6) { showToast('Password must be 6+ characters', 'error'); return; }
+
+      try {
+        const user = await AuthDB.signup(email, password, name);
+        await AuthDB.saveHealthProfile(user.uid, { age: '', conditions: '' });
+        showToast('Account created! 2FA is enabled (demo). You can view the secret in Security.', 'success');
+        setTimeout(() => { window.location.href = 'onboarding.html'; }, 600);
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (document.getElementById('form-signin').classList.contains('visible')) doSignIn();
+        else doSignUp();
+      }
+    });
+  </script>
+</body>
+</html>

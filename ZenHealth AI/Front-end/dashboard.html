@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .welcome{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+    .welcome-band{background:linear-gradient(135deg,var(--accent-dim),rgba(99,102,241,0.08));border:1px solid var(--border-l);border-radius:var(--r-l);padding:18px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;position:relative;overflow:hidden}
+    .welcome-band::before{content:'🩺';position:absolute;right:18px;bottom:-12px;font-size:64px;opacity:0.07}
+    .quick-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--accent);color:#020814;font-weight:800;font-size:13px;border-radius:var(--r-s)}
+    .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+    .stat{border:1px solid var(--border);border-radius:var(--r);padding:14px;background:rgba(255,255,255,0.03)}
+    .stat-num{font-family:var(--font-display);font-size:22px;font-weight:800}
+    .stat-name{font-size:12px;color:var(--text-2)}
+    .hint{font-size:12px;color:var(--text-3)}
+    .grid-2{display:grid;grid-template-columns:1.25fr 0.75fr;gap:12px;margin-top:12px}
+    @media (max-width: 980px){.grid-2{grid-template-columns:1fr}}
+    .checkin-row{display:grid;grid-template-columns:140px 1fr 52px;gap:12px;align-items:center;margin:10px 0}
+    .mini{font-size:12px;color:var(--text-3)}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);background:var(--surface);border-radius:999px;color:var(--text-2);font-size:12px;cursor:pointer}
+    .chip:hover{background:var(--surface-h);color:var(--text)}
+    .trend{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+    .bar{width:12px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);position:relative;overflow:hidden}
+    .bar > span{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:0.9}
+    .med-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .med-item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);background:var(--surface);border-radius:14px;padding:10px 12px}
+    .med-name{font-weight:800}
+    .med-meta{font-size:12px;color:var(--text-3)}
+    .med-actions{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Welcome</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="nav-section">Account</div>
+      <a href="onboarding.html" class="nav-link"><span class="nav-icon">👤</span><span>My profile</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="welcome">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle" id="dash-sub">Loading...</div>
+        </div>
+        <a href="doctor.html" class="quick-btn">💬 Chat with Zen</a>
+      </div>
+
+      <div class="welcome-band">
+        <div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:800;margin-bottom:4px">How are you feeling today?</div>
+          <div style="font-size:13px;color:var(--text-2);max-width:420px">
+            Describe symptoms to Zen and get a triage-style response: urgency, possible causes, and next steps.
+          </div>
+        </div>
+        <div class="hint">For emergencies, call local emergency services.</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num" id="stat-age">—</div>
+          <div class="stat-name">Age</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="stat-conditions">—</div>
+          <div class="stat-name">Conditions</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="stat-chats">0</div>
+          <div class="stat-name">Chats</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:800;margin-bottom:8px">Tip</div>
+        <div id="tip" style="color:var(--text-2)">Loading...</div>
+        <button class="btn btn-outline" style="margin-top:12px" onclick="newTip()">↻ New tip</button>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:var(--font-display);font-weight:800">Daily check-in</div>
+              <div class="mini">A quick way to track how you feel. Stored only on this device.</div>
+            </div>
+            <button class="btn btn-outline" onclick="saveCheckIn()">💾 Save</button>
+          </div>
+
+          <div class="checkin-row">
+            <div style="font-weight:700;color:var(--text-2)">Mood</div>
+            <input id="ci-mood" type="range" min="1" max="5" value="3" />
+            <div id="ci-mood-v" style="text-align:right;font-weight:800">3</div>
+          </div>
+          <div class="checkin-row">
+            <div style="font-weight:700;color:var(--text-2)">Energy</div>
+            <input id="ci-energy" type="range" min="1" max="5" value="3" />
+            <div id="ci-energy-v" style="text-align:right;font-weight:800">3</div>
+          </div>
+          <div class="checkin-row">
+            <div style="font-weight:700;color:var(--text-2)">Stress</div>
+            <input id="ci-stress" type="range" min="1" max="5" value="3" />
+            <div id="ci-stress-v" style="text-align:right;font-weight:800">3</div>
+          </div>
+          <div class="checkin-row" style="grid-template-columns:140px 1fr;align-items:start">
+            <div style="font-weight:700;color:var(--text-2);padding-top:8px">Note</div>
+            <textarea id="ci-note" class="input" rows="2" placeholder="Optional: anything you want to remember…"></textarea>
+          </div>
+
+          <div style="margin-top:8px">
+            <div class="mini">Last 7 days trend (average mood+energy vs stress)</div>
+            <div class="trend" id="trend"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-family:var(--font-display);font-weight:800">Ask Zen</div>
+          <div class="mini">Quick prompts to start a chat.</div>
+          <div class="pill-row">
+            <button class="chip" onclick="askZen('Hey Zen — what can you do?')">✨ What can you do?</button>
+            <button class="chip" onclick="askZen('Can you guide me through the app features?')">🧭 App tour</button>
+            <button class="chip" onclick="askZen('I want to check a symptom.')">🩺 Check a symptom</button>
+            <button class="chip" onclick="askZen('Help me prepare questions for a doctor visit.')">🧾 Doctor visit prep</button>
+            <button class="chip" onclick="askZen('Help me log a journal entry.')">📓 Journal help</button>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div style="font-family:var(--font-display);font-weight:800">Medication reminders</div>
+          <div class="mini" id="med-next">No reminders yet.</div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <input class="input" id="med-name" placeholder="Medication name" style="flex:1;min-width:180px" />
+            <input class="input" id="med-every" type="number" min="1" value="8" title="Hours" style="width:120px" />
+            <button class="btn btn-outline" onclick="addMed()">＋ Add</button>
+          </div>
+          <div class="mini" style="margin-top:6px">Default: every <span id="med-every-label">8</span> hours</div>
+
+          <div class="med-list" id="med-list"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    const tips = [
+      'Drink water consistently throughout the day — hydration affects energy and headaches.',
+      'If symptoms are severe, sudden, or worsening quickly, seek urgent medical care.',
+      'Rest + fluids often help when you have a mild fever, but monitor for red flags.',
+      'If you have chest pain, trouble breathing, or fainting — treat it as an emergency.'
+    ];
+
+    function pickTipIndex() {
+      const last = parseInt(localStorage.getItem('ha_tip_last_idx') || '-1', 10);
+      if (tips.length <= 1) return 0;
+      let idx = Math.floor(Math.random() * tips.length);
+      if (idx === last) idx = (idx + 1) % tips.length;
+      localStorage.setItem('ha_tip_last_idx', String(idx));
+      return idx;
+    }
+
+    function newTip() {
+      const idx = pickTipIndex();
+      document.getElementById('tip').textContent = tips[idx];
+    }
+
+    function todayKey(ts = Date.now()) {
+      const d = new Date(ts);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function getCheckins() {
+      return DB.get('ha_checkins') || [];
+    }
+
+    function setSliderLabel(id) {
+      const el = document.getElementById(id);
+      const out = document.getElementById(id + '-v');
+      if (!el || !out) return;
+      out.textContent = String(el.value);
+    }
+
+    function loadTodayCheckIn() {
+      const items = getCheckins();
+      const k = todayKey();
+      const existing = items.find(x => x.date === k);
+      const mood = existing?.mood ?? 3;
+      const energy = existing?.energy ?? 3;
+      const stress = existing?.stress ?? 3;
+      document.getElementById('ci-mood').value = String(mood);
+      document.getElementById('ci-energy').value = String(energy);
+      document.getElementById('ci-stress').value = String(stress);
+      document.getElementById('ci-note').value = existing?.note || '';
+      setSliderLabel('ci-mood');
+      setSliderLabel('ci-energy');
+      setSliderLabel('ci-stress');
+    }
+
+    function saveCheckIn() {
+      const items = getCheckins();
+      const k = todayKey();
+      const mood = parseInt(document.getElementById('ci-mood').value, 10);
+      const energy = parseInt(document.getElementById('ci-energy').value, 10);
+      const stress = parseInt(document.getElementById('ci-stress').value, 10);
+      const note = String(document.getElementById('ci-note').value || '').trim();
+
+      const next = items.filter(x => x.date !== k);
+      next.push({ date: k, mood, energy, stress, note, timestamp: Date.now() });
+      next.sort((a, b) => (a.date > b.date ? 1 : -1));
+      DB.set('ha_checkins', next.slice(-90));
+      renderTrend();
+      showToast('Check-in saved', 'success');
+    }
+
+    function renderTrend() {
+      const el = document.getElementById('trend');
+      if (!el) return;
+      const items = getCheckins().slice().sort((a, b) => (a.date > b.date ? 1 : -1));
+      const last7 = items.slice(-7);
+
+      if (!last7.length) {
+        el.innerHTML = '<div class="mini">No check-ins yet.</div>';
+        return;
+      }
+
+      el.innerHTML = last7.map(x => {
+        const a = ((x.mood + x.energy) / 2);
+        const b = (6 - x.stress);
+        const score = Math.max(1, Math.min(5, (a + b) / 2));
+        const h = Math.round((score / 5) * 56) + 10;
+        return `<div class="bar" title="${x.date} — score ${score.toFixed(1)}" style="height:72px"><span style="height:${h}px"></span></div>`;
+      }).join('');
+    }
+
+    function askZen(text) {
+      localStorage.setItem('ha_zen_prefill', text);
+      window.location.href = 'doctor.html';
+    }
+
+    function getMeds() {
+      return DB.get('ha_meds') || [];
+    }
+
+    function setMeds(list) {
+      DB.set('ha_meds', list);
+    }
+
+    function computeNextDue(med, now = Date.now()) {
+      const everyMs = Math.max(1, med.everyHours || 8) * 60 * 60 * 1000;
+      const base = med.startAt || now;
+      if (now <= base) return base;
+      const n = Math.ceil((now - base) / everyMs);
+      return base + n * everyMs;
+    }
+
+    function formatCountdown(ms) {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      return `${h}h ${String(m).padStart(2,'0')}m`;
+    }
+
+    function renderMeds() {
+      const listEl = document.getElementById('med-list');
+      const nextEl = document.getElementById('med-next');
+      const meds = getMeds();
+
+      if (!meds.length) {
+        listEl.innerHTML = '';
+        nextEl.textContent = 'No reminders yet.';
+        return;
+      }
+
+      const now = Date.now();
+      const due = meds
+        .map(m => ({ ...m, nextDue: computeNextDue(m, now) }))
+        .sort((a, b) => a.nextDue - b.nextDue);
+
+      const first = due[0];
+      const ms = first.nextDue - now;
+      nextEl.textContent = `Next: ${first.name} in ${formatCountdown(ms)} (${new Date(first.nextDue).toLocaleTimeString()})`;
+
+      listEl.innerHTML = due.map(m => {
+        const ms2 = m.nextDue - now;
+        return `
+          <div class="med-item">
+            <div>
+              <div class="med-name">${escHtml(m.name)}</div>
+              <div class="med-meta">Every ${m.everyHours}h • Next in ${formatCountdown(ms2)}</div>
+            </div>
+            <div class="med-actions">
+              <button class="btn btn-outline" onclick="takeNow('${escAttr(m.id)}')">✓ Take now</button>
+              <button class="btn btn-outline" onclick="removeMed('${escAttr(m.id)}')">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addMed() {
+      const name = String(document.getElementById('med-name').value || '').trim();
+      const everyHours = parseInt(document.getElementById('med-every').value, 10);
+      if (!name) { showToast('Enter a medication name', 'error'); return; }
+      if (!Number.isFinite(everyHours) || everyHours <= 0) { showToast('Enter hours (e.g. 8)', 'error'); return; }
+
+      const meds = getMeds();
+      meds.push({
+        id: Math.random().toString(16).slice(2) + Date.now().toString(16),
+        name,
+        everyHours,
+        startAt: Date.now()
+      });
+      setMeds(meds);
+      document.getElementById('med-name').value = '';
+      renderMeds();
+      showToast('Reminder added', 'success');
+    }
+
+    function removeMed(id) {
+      const meds = getMeds().filter(m => m.id !== id);
+      setMeds(meds);
+      renderMeds();
+      showToast('Removed', 'success');
+    }
+
+    function takeNow(id) {
+      const meds = getMeds().map(m => m.id === id ? { ...m, startAt: Date.now() } : m);
+      setMeds(meds);
+      renderMeds();
+      showToast('Logged as taken', 'success');
+    }
+
+    (async function init() {
+      const user = Auth.getUser();
+      const profile = await AuthDB.getHealthProfile(user.uid);
+      document.getElementById('dash-sub').textContent = 'Welcome back, ' + (user.name?.split(' ')[0] || 'friend') + '.';
+
+      const age = profile?.age ? String(profile.age) : '—';
+      const conditions = (profile?.conditions || '').trim();
+      document.getElementById('stat-age').textContent = age;
+      document.getElementById('stat-conditions').textContent = conditions ? String(conditions.split(',').filter(Boolean).length) : '0';
+
+      const chats = DB.get('ha_chat_history') || [];
+      document.getElementById('stat-chats').textContent = String(chats.length);
+
+      newTip();
+      setInterval(newTip, 5 * 60 * 1000);
+
+      loadTodayCheckIn();
+      renderTrend();
+      ['ci-mood','ci-energy','ci-stress'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => setSliderLabel(id));
+      });
+
+      const every = document.getElementById('med-every');
+      const everyLabel = document.getElementById('med-every-label');
+      if (every && everyLabel) {
+        everyLabel.textContent = String(every.value);
+        every.addEventListener('input', () => { everyLabel.textContent = String(every.value); });
+      }
+      renderMeds();
+      setInterval(renderMeds, 60 * 1000);
+
+      const ok = await ensureProfileComplete();
+      if (!ok) return;
+    })();
+  </script>
+</body>
+</html>

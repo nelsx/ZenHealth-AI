@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find Care — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:12px 0 16px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer}
+    .chip.active{background:var(--accent-dim);border-color:rgba(0,217,217,0.22);color:var(--text)}
+    .care-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .care-card{border:1px solid var(--border);border-radius:var(--r);padding:14px;background:rgba(255,255,255,0.03)}
+    .care-title{font-family:var(--font-display);font-weight:800;margin-bottom:4px}
+    .care-meta{font-size:12px;color:var(--text-2)}
+    .care-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .btn-sm{padding:10px 12px;font-size:13px;border-radius:12px}
+    .banner{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;background:rgba(255,255,255,0.02);margin:10px 0 14px}
+    .banner strong{color:var(--accent)}
+    @media (max-width: 900px){.care-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Find health care close to you.</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-title">Find care</div>
+      <div class="page-subtitle">Front-end demo: locate nearby hospitals, doctors, and psychiatrists, then contact them.</div>
+
+      <div class="banner" id="triage-banner" style="display:none"></div>
+
+      <div class="toolbar">
+        <div class="chips" id="chips">
+          <button class="chip active" data-type="hospital" onclick="setType('hospital')">Hospitals</button>
+          <button class="chip" data-type="doctor" onclick="setType('doctor')">Doctors</button>
+          <button class="chip" data-type="psychiatrist" onclick="setType('psychiatrist')">Psychiatrists</button>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="useMyLocation()">📍 Use my location</button>
+          <a class="btn btn-primary btn-sm" id="maps-search" href="#" target="_blank" rel="noreferrer">Open maps search →</a>
+        </div>
+      </div>
+
+      <div class="care-grid" id="care-grid"></div>
+
+      <div class="card" style="margin-top:14px">
+        <div style="font-family:var(--font-display);font-weight:800;margin-bottom:6px">Sponsor-ready notes</div>
+        <div style="color:var(--text-2);font-size:13px;line-height:1.75">
+          This page is a front-end prototype to demonstrate the roadmap: automated triage, escalation to local providers, and one-tap contact.
+          Real deployments can replace this mock list with provider directories and verified location services.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    const state = {
+      type: 'hospital',
+      coords: null,
+      triage: null
+    };
+
+    const MOCK = {
+      hospital: [
+        { name: 'City General Hospital', kind: 'Hospital', phone: '+1-555-0101', email: 'intake@citygeneral.example', address: 'Central District', open: '24/7 Emergency' },
+        { name: 'ZenCare Urgent Clinic', kind: 'Urgent care', phone: '+1-555-0102', email: 'care@zencare.example', address: 'Market Road', open: '8am–10pm' },
+        { name: 'St. Aurora Medical Center', kind: 'Hospital', phone: '+1-555-0103', email: 'appointments@aurora.example', address: 'River Avenue', open: '24/7' }
+      ],
+      doctor: [
+        { name: 'Dr. A. Mensah', kind: 'Family medicine', phone: '+1-555-0201', email: 'dr.mensah@clinic.example', address: 'Oak Street', open: 'Mon–Fri' },
+        { name: 'Dr. R. Chen', kind: 'Internal medicine', phone: '+1-555-0202', email: 'dr.chen@clinic.example', address: 'Health Plaza', open: 'Mon–Sat' },
+        { name: 'Dr. S. Patel', kind: 'Pediatrics', phone: '+1-555-0203', email: 'dr.patel@clinic.example', address: 'Sunrise Boulevard', open: 'Mon–Fri' }
+      ],
+      psychiatrist: [
+        { name: 'MindWell Psychiatry', kind: 'Psychiatry clinic', phone: '+1-555-0301', email: 'hello@mindwell.example', address: 'North Gate', open: 'Appointments' },
+        { name: 'Dr. L. Okafor', kind: 'Psychiatrist', phone: '+1-555-0302', email: 'dr.okafor@mind.example', address: 'Lakeside', open: 'Mon–Fri' },
+        { name: 'CalmBridge Center', kind: 'Mental health center', phone: '+1-555-0303', email: 'support@calmbridge.example', address: 'Downtown', open: 'Mon–Sat' }
+      ]
+    };
+
+    function parseQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const urgency = (params.get('urgency') || '').toUpperCase();
+      const dx = params.get('dx') || '';
+      if (urgency || dx) {
+        state.triage = { urgency, dx };
+        const el = document.getElementById('triage-banner');
+        el.style.display = 'block';
+        el.innerHTML = `<strong>From Zen:</strong> ${urgency ? `Urgency: ${escHtml(urgency)}. ` : ''}${dx ? `Might be: ${escHtml(dx)}. ` : ''}Use the options below to contact care.`;
+      }
+    }
+
+    function setType(type) {
+      state.type = type;
+      document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.type === type));
+      render();
+      updateMapsLink();
+    }
+
+    function updateMapsLink() {
+      const q = encodeURIComponent(state.type + ' near me');
+      const url = `https://www.google.com/maps/search/?api=1&query=${q}`;
+      const a = document.getElementById('maps-search');
+      a.href = url;
+      a.textContent = `Open maps search →`;
+    }
+
+    function card(item) {
+      const mapsQuery = encodeURIComponent(item.name + ' ' + item.address);
+      const mapsHref = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+      const phoneHref = item.phone ? `tel:${item.phone.replace(/\s/g,'')}` : '#';
+      const emailHref = item.email ? `mailto:${item.email}` : '#';
+
+      return `
+        <div class="care-card">
+          <div class="care-title">${escHtml(item.name)}</div>
+          <div class="care-meta">${escHtml(item.kind)} • ${escHtml(item.address)} • ${escHtml(item.open)}</div>
+          <div class="care-actions">
+            <a class="btn btn-primary btn-sm" href="${mapsHref}" target="_blank" rel="noreferrer">Directions</a>
+            <a class="btn btn-outline btn-sm" href="${phoneHref}">Call</a>
+            <a class="btn btn-outline btn-sm" href="${emailHref}">Email</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const grid = document.getElementById('care-grid');
+      const items = MOCK[state.type] || [];
+      grid.innerHTML = items.map(card).join('');
+    }
+
+    async function useMyLocation() {
+      if (!('geolocation' in navigator)) {
+        showToast('Geolocation not supported in this browser', 'error');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          state.coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          showToast('Location added. Open Maps search for nearby results.', 'success');
+          updateMapsLink();
+        },
+        () => {
+          showToast('Could not access location. You can still use Maps search.', 'error');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    parseQuery();
+    updateMapsLink();
+    render();
+  </script>
+</body>
+</html>

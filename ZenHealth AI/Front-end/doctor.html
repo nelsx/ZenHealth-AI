@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meet Zen — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .chat-header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px}
+    .ai-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-bottom:6px}
+    .welcome-msg{align-self:flex-start;max-width:80%}
+    .voice-status{text-align:center;font-size:12px;color:var(--red);height:18px}
+    .tts-btn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:100px;font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--text-2);cursor:pointer;margin-top:6px}
+    .tts-btn:hover{color:var(--text);background:var(--surface-h)}
+    .clear-btn{font-size:12px}
+    .disclaimer{font-size:11px;color:var(--text-3);text-align:center;padding:8px 0;border-top:1px solid var(--border);margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Say Hi to zen</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="nav-section">Account</div>
+      <a href="onboarding.html" class="nav-link"><span class="nav-icon">👤</span><span>My profile</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="chat-header">
+        <div>
+          <div class="page-title">AI Doctor</div>
+          <div class="page-subtitle">Describe symptoms to get urgency + suggested next steps.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <a class="btn btn-outline" href="history.html">🕘 History</a>
+          <button class="btn btn-outline clear-btn" onclick="clearChat()">🗑 Clear</button>
+        </div>
+      </div>
+
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages">
+          <div class="welcome-msg">
+            <div class="ai-avatar">🧑‍⚕️</div>
+            <div class="bubble bubble-ai">
+              <div class="bubble-label">Zen</div>
+              Hey there, I'm Zen your personal health care assistant, here to be your friend and also help you understand your symptoms, provide possible diagnoses, suggest over-the-counter remedies for minor conditions, and tell you when it's important to see a doctor.
+       Tell me how you're doing and I'll help you out!
+              <br><br>
+              <span style="font-size:12px;color:var(--text-3)">⚠️ For emergencies, call emergency services immediately.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="voice-status" id="voice-status"></div>
+
+        <div class="chat-input-row">
+          <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="Voice input">🎙️</button>
+          <textarea class="input" id="chat-input" placeholder="Describe your symptoms..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send">→</button>
+        </div>
+
+        <div class="disclaimer">
+          Zen is for informational purposes only and does not replace professional medical advice.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    let isRecording = false;
+    let isSending = false;
+
+    function scrollToBottom() {
+      const el = document.getElementById('chat-messages');
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function addUserBubble(text) {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.style.alignSelf = 'flex-end';
+      div.innerHTML = `<div class="bubble bubble-user">${escHtml(text)}</div>`;
+      msgs.appendChild(div);
+      scrollToBottom();
+
+      const history = DB.get('ha_chat_history') || [];
+      history.push({ role: 'user', content: text, timestamp: Date.now() });
+      DB.set('ha_chat_history', history);
+    }
+
+    function addTyping() {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.id = 'typing-indicator';
+      div.className = 'welcome-msg';
+      div.innerHTML = `
+        <div class="ai-avatar">🧑‍⚕️</div>
+        <div class="bubble bubble-ai">
+          <div class="bubble-label">Zen</div>
+          <div style="display:flex;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--text-3);display:inline-block;animation:pulse 1s infinite"></span>
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--text-3);display:inline-block;animation:pulse 1s 0.15s infinite"></span>
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--text-3);display:inline-block;animation:pulse 1s 0.3s infinite"></span>
+          </div>
+        </div>`;
+      msgs.appendChild(div);
+      scrollToBottom();
+    }
+
+    function removeTyping() {
+      const t = document.getElementById('typing-indicator');
+      if (t) t.remove();
+    }
+
+    function addAiBubble(triage) {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'welcome-msg';
+
+      const urgency = String(triage.urgency_level || '').toUpperCase();
+      const isGreen = urgency === 'GREEN';
+      const indicator = isGreen ? 'green' : 'red';
+
+      const diagnosis = Array.isArray(triage.potential_diagnosis) ? triage.potential_diagnosis.join(', ') : '';
+      const advice = Array.isArray(triage.suggested_action) ? triage.suggested_action.join('\n') : '';
+
+      div.innerHTML = `
+        <div class="ai-avatar">🧑‍⚕️</div>
+        <div class="bubble bubble-ai" style="max-width:82%">
+          <div class="bubble-label">Zen</div>
+          <div>${escHtml(triage.disclaimer || '')}</div>
+
+          <div class="indicator-card indicator-${indicator}-card">
+            <div class="indicator-header">
+              <div class="indicator-dot dot-${indicator}"></div>
+              <div class="indicator-title" style="color:var(--${indicator})">${isGreen ? '✓ Manageable at home' : '⚠ See a doctor'}</div>
+            </div>
+            <div class="indicator-body">
+              ${urgency ? `<p><strong>Urgency:</strong> ${escHtml(urgency)}</p>` : ''}
+              ${diagnosis ? `<p><strong>Possible conditions:</strong> ${escHtml(diagnosis)}</p>` : ''}
+              ${advice ? `<p><strong>Next steps:</strong> ${escHtml(advice)}</p>` : ''}
+            </div>
+          </div>
+
+          <button class="tts-btn" onclick="speakResponse(this)" data-text="${escAttr(triage.disclaimer || '')}">🔊 Listen</button>
+        </div>
+      `;
+
+      msgs.appendChild(div);
+      scrollToBottom();
+
+      const history = DB.get('ha_chat_history') || [];
+      history.push({ role: 'assistant', content: JSON.stringify(triage), timestamp: Date.now() });
+      DB.set('ha_chat_history', history);
+    }
+
+    function addChatBubble(text) {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'welcome-msg';
+
+      div.innerHTML = `
+        <div class="ai-avatar">🧑‍⚕️</div>
+        <div class="bubble bubble-ai" style="max-width:82%">
+          <div class="bubble-label">Zen</div>
+          <div>${escHtml(text || '')}</div>
+          <button class="tts-btn" onclick="speakResponse(this)" data-text="${escAttr(text || '')}">🔊 Listen</button>
+        </div>
+      `;
+
+      msgs.appendChild(div);
+      scrollToBottom();
+
+      const history = DB.get('ha_chat_history') || [];
+      history.push({ role: 'assistant', content: String(text || ''), timestamp: Date.now() });
+      DB.set('ha_chat_history', history);
+    }
+
+    function shouldUseTriage(text) {
+      const t = String(text || '').toLowerCase();
+      const patterns = [
+        /\b(symptom|symptoms|diagnose|diagnosis)\b/i,
+        /\b(pain|hurt|ache|headache|migraine)\b/i,
+        /\b(fever|temperature|chills)\b/i,
+        /\b(cough|sore throat|throat|congestion|runny nose)\b/i,
+        /\b(nausea|vomit|throw up|diarrhea|constipation|stomach)\b/i,
+        /\b(rash|hives|itch|swollen|swelling)\b/i,
+        /\b(dizzy|dizziness|faint|fainted)\b/i,
+        /\b(shortness of breath|breathing|wheezing)\b/i,
+        /\b(chest pain|chest|blood|bleeding|burn|injury|infect|infection)\b/i,
+        /\b(period|pregnant|pregnancy)\b/i,
+        /\b(anxiety|panic|depressed|suicidal)\b/i
+      ];
+      return patterns.some(r => r.test(t));
+    }
+
+    async function sendMessage() {
+      if (isSending) return;
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const useTriage = shouldUseTriage(text);
+      if (useTriage) {
+        const ok = await ensureProfileComplete();
+        if (!ok) return;
+      }
+
+      input.value = '';
+      input.style.height = 'auto';
+      isSending = true;
+      document.getElementById('send-btn').disabled = true;
+
+      addUserBubble(text);
+      addTyping();
+
+      try {
+        if (useTriage) {
+          const triage = await callTriage(text);
+          removeTyping();
+          addAiBubble(triage);
+        } else {
+          const chat = await callChat(text);
+          removeTyping();
+          addChatBubble(chat.reply || '');
+        }
+      } catch (err) {
+        removeTyping();
+        showToast('Error: ' + err.message, 'error');
+      }
+
+      isSending = false;
+      document.getElementById('send-btn').disabled = false;
+    }
+
+    const Voice = {
+      recognition: null,
+      synth: window.speechSynthesis,
+      startListening: (onResult, onEnd) => {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { showToast('Voice not supported in this browser', 'error'); return; }
+        Voice.recognition = new SR();
+        Voice.recognition.continuous = false;
+        Voice.recognition.interimResults = false;
+        Voice.recognition.lang = 'en-US';
+        Voice.recognition.onresult = (e) => onResult(e.results[0][0].transcript);
+        Voice.recognition.onend = () => { if (onEnd) onEnd(); };
+        Voice.recognition.start();
+      },
+      speak: (text, rate = 1) => {
+        if (!Voice.synth) return;
+        Voice.synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = rate; u.pitch = 1;
+        Voice.synth.speak(u);
+      }
+    };
+
+    function toggleVoice() {
+      const btn = document.getElementById('voice-btn');
+      const status = document.getElementById('voice-status');
+
+      if (isRecording) {
+        if (Voice.recognition) Voice.recognition.stop();
+        isRecording = false;
+        btn.classList.remove('recording');
+        status.textContent = '';
+        return;
+      }
+
+      isRecording = true;
+      btn.classList.add('recording');
+      status.textContent = '🎙️ Listening...';
+
+      Voice.startListening(
+        (transcript) => {
+          document.getElementById('chat-input').value = transcript;
+          status.textContent = '✓ Got it!';
+          setTimeout(() => sendMessage(), 250);
+        },
+        () => {
+          isRecording = false;
+          btn.classList.remove('recording');
+          status.textContent = '';
+        }
+      );
+    }
+
+    function speakResponse(btn) {
+      Voice.speak(btn.dataset.text);
+      btn.textContent = '🔊 Speaking...';
+      setTimeout(() => { btn.textContent = '🔊 Listen'; }, 2500);
+    }
+
+    function clearChat() {
+      DB.set('ha_chat_history', []);
+      const msgs = document.getElementById('chat-messages');
+      msgs.innerHTML = `
+        <div class="welcome-msg">
+          <div class="ai-avatar">🧑‍⚕️</div>
+          <div class="bubble bubble-ai">
+            <div class="bubble-label">Zen</div>
+            Chat cleared. How can I help you today?
+          </div>
+        </div>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const prefill = localStorage.getItem('ha_zen_prefill');
+      if (prefill) {
+        localStorage.removeItem('ha_zen_prefill');
+        const input = document.getElementById('chat-input');
+        if (input) {
+          input.value = prefill;
+          input.dispatchEvent(new Event('input'));
+          setTimeout(() => input.focus(), 50);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

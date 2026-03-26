@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenHealth AI — Your Profile</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .wrap{max-width:920px;margin:0 auto}
+    .hint{font-size:12px;color:var(--text-3);margin-top:6px}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:14px;flex-wrap:wrap}
+    .sub{color:var(--text-2);font-size:13px}
+    .section-title{font-family:var(--font-display);font-weight:900;margin:18px 0 10px;font-size:14px;letter-spacing:0.3px}
+    .slider-wrap{border:1px solid var(--border);border-radius:var(--r);padding:12px;background:rgba(255,255,255,0.03)}
+    .slider-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .slider-val{font-family:var(--font-display);font-weight:900}
+    input[type="range"]{width:100%}
+    textarea{min-height:96px;resize:vertical}
+    @media (max-width: 900px){.row{grid-template-columns:1fr}.row-2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card wrap">
+      <div class="topbar">
+        <div>
+          <div class="auth-title">Your health profile</div>
+          <div class="sub">For safety and personalization, Zen uses this to tailor triage guidance.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn btn-outline" type="button" onclick="Auth.logout()">Logout</button>
+        </div>
+      </div>
+
+      <form id="profile-form">
+        <div class="section-title">Identity</div>
+
+        <div class="row">
+          <div class="slider-wrap">
+            <div class="slider-top">
+              <div class="input-label">Day of birth</div>
+              <div class="slider-val" id="dob-day-val">1</div>
+            </div>
+            <input class="input" type="range" id="dob-day" min="1" max="31" value="1" />
+          </div>
+          <div class="slider-wrap">
+            <div class="slider-top">
+              <div class="input-label">Month of birth</div>
+              <div class="slider-val" id="dob-month-val">1</div>
+            </div>
+            <input class="input" type="range" id="dob-month" min="1" max="12" value="1" />
+          </div>
+          <div class="slider-wrap">
+            <div class="slider-top">
+              <div class="input-label">Year of birth</div>
+              <div class="slider-val" id="dob-year-val">2000</div>
+            </div>
+            <input class="input" type="range" id="dob-year" min="1920" max="2026" value="2000" />
+          </div>
+        </div>
+
+        <div class="hint" id="age-preview">Age: —</div>
+
+        <div class="row">
+          <div class="input-wrap">
+            <label class="input-label">Gender</label>
+            <select class="input" id="gender" required>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Height (cm)</label>
+            <input class="input" type="number" id="height" min="50" max="250" placeholder="170" required />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Weight (kg)</label>
+            <input class="input" type="number" id="weight" min="20" max="500" step="0.1" placeholder="70" required />
+          </div>
+        </div>
+
+        <div class="section-title">Medical</div>
+
+        <div class="row">
+          <div class="input-wrap">
+            <label class="input-label">Blood group (optional)</label>
+            <input class="input" id="blood-group" type="text" placeholder="e.g. O+" />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Genotype (optional)</label>
+            <input class="input" id="genotype" type="text" placeholder="e.g. AA, AS" />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Existing conditions (optional)</label>
+            <input class="input" type="text" id="conditions" placeholder="Asthma, Diabetes" />
+            <div class="hint">Comma-separated list</div>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="input-wrap">
+            <label class="input-label">Allergies (optional)</label>
+            <textarea class="input" id="allergies" placeholder="e.g. Penicillin, peanuts..."></textarea>
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Current medications (optional)</label>
+            <textarea class="input" id="medications" placeholder="e.g. Metformin 500mg daily..."></textarea>
+          </div>
+        </div>
+
+        <div class="section-title">Lifestyle</div>
+
+        <div class="row">
+          <div class="input-wrap">
+            <label class="input-label">Smoking</label>
+            <select class="input" id="smoking" required>
+              <option value="">Select</option>
+              <option value="Never">Never</option>
+              <option value="Occasionally">Occasionally</option>
+              <option value="Regularly">Regularly</option>
+              <option value="Former">Former</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Alcohol</label>
+            <select class="input" id="alcohol" required>
+              <option value="">Select</option>
+              <option value="Never">Never</option>
+              <option value="Occasionally">Occasionally</option>
+              <option value="Regularly">Regularly</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Activity level</label>
+            <select class="input" id="activity" required>
+              <option value="">Select</option>
+              <option value="Low">Low</option>
+              <option value="Moderate">Moderate</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" id="save-btn" type="submit">Save profile →</button>
+        </div>
+
+        <div style="text-align:center;margin-top:12px">
+          <a style="font-size:13px;color:var(--text-2);cursor:pointer" href="dashboard.html">Skip for now →</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    (async function load() {
+      const user = Auth.getUser();
+      const profile = await AuthDB.getHealthProfile(user.uid);
+      const yearEl = document.getElementById('dob-year');
+      const nowYear = new Date().getFullYear();
+      yearEl.min = String(nowYear - 120);
+      yearEl.max = String(nowYear);
+      yearEl.value = String(Math.min(nowYear - 18, Math.max(nowYear - 40, 2000)));
+
+      if (profile) {
+        document.getElementById('dob-day').value = profile.dobDay || '1';
+        document.getElementById('dob-month').value = profile.dobMonth || '1';
+        document.getElementById('dob-year').value = profile.dobYear || yearEl.value;
+
+        document.getElementById('gender').value = profile.gender || '';
+        document.getElementById('height').value = profile.height || '';
+        document.getElementById('weight').value = profile.weight || '';
+        document.getElementById('blood-group').value = profile.bloodGroup || '';
+        document.getElementById('genotype').value = profile.genotype || '';
+        document.getElementById('conditions').value = profile.conditions || '';
+        document.getElementById('allergies').value = profile.allergies || '';
+        document.getElementById('medications').value = profile.medications || '';
+        document.getElementById('smoking').value = profile.smoking || '';
+        document.getElementById('alcohol').value = profile.alcohol || '';
+        document.getElementById('activity').value = profile.activity || '';
+      }
+
+      syncDobUI();
+    })();
+
+    function calcAge(d, m, y) {
+      const dob = new Date(y, m - 1, d);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const mm = today.getMonth() - dob.getMonth();
+      if (mm < 0 || (mm === 0 && today.getDate() < dob.getDate())) age--;
+      return age;
+    }
+
+    function syncDobUI() {
+      const d = parseInt(document.getElementById('dob-day').value, 10);
+      const m = parseInt(document.getElementById('dob-month').value, 10);
+      const y = parseInt(document.getElementById('dob-year').value, 10);
+
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
+
+      document.getElementById('dob-day-val').textContent = String(d);
+      document.getElementById('dob-month-val').textContent = months[(m - 1)] || String(m);
+      document.getElementById('dob-year-val').textContent = String(y);
+
+      const age = calcAge(d, m, y);
+      document.getElementById('age-preview').textContent = Number.isFinite(age) ? `Age: ${age}` : 'Age: —';
+    }
+
+    document.getElementById('dob-day').addEventListener('input', syncDobUI);
+    document.getElementById('dob-month').addEventListener('input', syncDobUI);
+    document.getElementById('dob-year').addEventListener('input', syncDobUI);
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = Auth.getUser();
+      const dobDay = parseInt(document.getElementById('dob-day').value, 10);
+      const dobMonth = parseInt(document.getElementById('dob-month').value, 10);
+      const dobYear = parseInt(document.getElementById('dob-year').value, 10);
+      const age = calcAge(dobDay, dobMonth, dobYear);
+
+      const gender = document.getElementById('gender').value;
+      const height = parseInt(document.getElementById('height').value, 10);
+      const weight = parseFloat(document.getElementById('weight').value);
+      const bloodGroup = document.getElementById('blood-group').value || '';
+      const genotype = document.getElementById('genotype').value || '';
+      const conditions = document.getElementById('conditions').value || '';
+      const allergies = document.getElementById('allergies').value || '';
+      const medications = document.getElementById('medications').value || '';
+      const smoking = document.getElementById('smoking').value;
+      const alcohol = document.getElementById('alcohol').value;
+      const activity = document.getElementById('activity').value;
+
+      if (!Number.isFinite(age) || age <= 0) { showToast('Please select a valid date of birth', 'error'); return; }
+      if (!gender || !Number.isFinite(height) || !Number.isFinite(weight) || !smoking || !alcohol || !activity) {
+        showToast('Please fill all required fields', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      try {
+        await AuthDB.saveHealthProfile(user.uid, {
+          dobDay,
+          dobMonth,
+          dobYear,
+          age,
+          gender,
+          height,
+          weight,
+          bloodGroup,
+          genotype,
+          conditions,
+          allergies,
+          medications,
+          smoking,
+          alcohol,
+          activity
+        });
+        showToast('Profile saved!', 'success');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
+      } catch (err) {
+        showToast(err.message || 'Could not save profile', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save profile →';
+      }
+    });
+
+    async function skipProfile() {
+      const user = Auth.getUser();
+      await AuthDB.saveHealthProfile(user.uid, { age: '', conditions: '' });
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>

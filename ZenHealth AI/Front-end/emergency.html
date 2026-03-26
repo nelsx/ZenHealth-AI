@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Contacts — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:12px 0 16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .contact{border:1px solid var(--border);border-radius:var(--r);padding:14px;background:rgba(255,255,255,0.03)}
+    .name{font-family:var(--font-display);font-weight:900;margin-bottom:4px}
+    .meta{font-size:12px;color:var(--text-2)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .btn-sm{padding:10px 12px;font-size:13px;border-radius:12px}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Who's your 911?</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user" style="margin-top:8px">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-title">Emergency contacts</div>
+      <div class="page-subtitle">For sponsorship demos: show preparedness + one-tap calling.</div>
+
+      <div class="row">
+        <div style="color:var(--text-2);font-size:13px">Add people Zen can recommend contacting in urgent situations.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="addExample()">Add example</button>
+          <button class="btn btn-outline" onclick="clearAll()">Clear all</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-family:var(--font-display);font-weight:900;margin-bottom:10px">Add contact</div>
+        <div class="grid">
+          <div class="input-wrap">
+            <label class="input-label">Name</label>
+            <input class="input" id="name" placeholder="Jane Doe" />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Relationship</label>
+            <input class="input" id="relationship" placeholder="Parent / Partner / Friend" />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Phone</label>
+            <input class="input" id="phone" placeholder="+1 555 0123" />
+          </div>
+          <div class="input-wrap">
+            <label class="input-label">Email (optional)</label>
+            <input class="input" id="email" placeholder="jane@example.com" />
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="save()">Save contact →</button>
+        </div>
+      </div>
+
+      <div class="grid" id="list"></div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    function render() {
+      const user = Auth.getUser();
+      const list = EmergencyContacts.list(user.uid);
+      const el = document.getElementById('list');
+
+      if (!list.length) {
+        el.innerHTML = '<div class="card" style="color:var(--text-2)">No emergency contacts yet.</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(c => {
+        const phone = c.phone || '';
+        const email = c.email || '';
+        return `
+          <div class="contact">
+            <div class="name">${escHtml(c.name || '—')}</div>
+            <div class="meta">${escHtml(c.relationship || '')} • ${escHtml(c.priority || 'Primary')}</div>
+            <div class="meta" style="margin-top:6px">${phone ? `📞 ${escHtml(phone)}` : ''}${phone && email ? ' • ' : ''}${email ? `✉️ ${escHtml(email)}` : ''}</div>
+            <div class="actions">
+              <a class="btn btn-primary btn-sm" href="${phone ? `tel:${phone.replace(/\s/g,'')}` : '#'}">Call</a>
+              <a class="btn btn-outline btn-sm" href="${email ? `mailto:${email}` : '#'}">Email</a>
+              <button class="btn btn-outline btn-sm" onclick="remove('${c.id}')">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function save() {
+      const user = Auth.getUser();
+      const name = document.getElementById('name').value.trim();
+      const relationship = document.getElementById('relationship').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
+
+      EmergencyContacts.add(user.uid, { name, relationship, phone, email, priority: 'Primary' });
+      document.getElementById('name').value = '';
+      document.getElementById('relationship').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('email').value = '';
+      showToast('Contact saved', 'success');
+      render();
+    }
+
+    function remove(id) {
+      const user = Auth.getUser();
+      EmergencyContacts.remove(user.uid, id);
+      showToast('Removed', 'success');
+      render();
+    }
+
+    function addExample() {
+      const user = Auth.getUser();
+      EmergencyContacts.add(user.uid, { name: 'Jane Doe', relationship: 'Partner', phone: '+1-555-0101', email: 'jane@example.com', priority: 'Primary' });
+      EmergencyContacts.add(user.uid, { name: 'John Doe', relationship: 'Parent', phone: '+1-555-0102', email: '', priority: 'Secondary' });
+      showToast('Example contacts added', 'success');
+      render();
+    }
+
+    function clearAll() {
+      const user = Auth.getUser();
+      EmergencyContacts.save(user.uid, []);
+      showToast('Cleared', 'success');
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

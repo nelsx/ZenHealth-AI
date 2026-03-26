@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Journal — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:12px 0 16px}
+    .entry{border:1px solid var(--border);border-radius:var(--r);padding:14px;background:rgba(255,255,255,0.03)}
+    .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;color:var(--text-3);font-size:12px;margin-bottom:8px}
+    .badge{padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-weight:800;font-size:11px;letter-spacing:0.4px;text-transform:uppercase}
+    .badge.red{border-color:rgba(255,61,90,0.35);background:rgba(255,61,90,0.10);color:#ffb6c1}
+    .badge.green{border-color:rgba(0,217,217,0.35);background:rgba(0,217,217,0.08);color:#a7ffff}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .textarea{min-height:110px;resize:vertical}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">So how are you feeling today??
+      </div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-title">Health journal</div>
+      <div class="page-subtitle">Front-end demo: manual entries + automatic entries from the Wearables page.</div>
+
+      <div class="row">
+        <div style="color:var(--text-2);font-size:13px">Entries help Zen spot patterns over time.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="clearJournal()">Clear journal</button>
+          <a class="btn btn-primary" href="wearables.html">⌚ Accessories demo →</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-family:var(--font-display);font-weight:900;margin-bottom:10px">Add an entry</div>
+        <div class="input-wrap">
+          <label class="input-label">How do you feel today?</label>
+          <textarea class="input textarea" id="entry" placeholder="Write how you feel, symptoms, meds taken, sleep, stress..." ></textarea>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="addEntry()">Save entry →</button>
+          <button class="btn btn-outline" onclick="addExample()">Add example</button>
+        </div>
+      </div>
+
+      <div class="grid" id="list"></div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    function render() {
+      const list = document.getElementById('list');
+      const entries = (DB.get('ha_journals') || []).slice().reverse();
+      if (!entries.length) {
+        list.innerHTML = '<div class="card" style="color:var(--text-2)">No journal entries yet.</div>';
+        return;
+      }
+
+      list.innerHTML = entries.map(e => {
+        const badge = e.indicator === 'red' ? 'red' : 'green';
+        const label = e.type === 'vitals' ? 'Vitals' : 'Note';
+        return `
+          <div class="entry">
+            <div class="meta">
+              <div>${new Date(e.date || Date.now()).toLocaleString()} • ${escHtml(label)}</div>
+              <div class="badge ${badge}">${escHtml(e.indicator || 'green')}</div>
+            </div>
+            <div style="color:var(--text-2);font-size:13px;line-height:1.85">${escHtml(e.text || '')}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addEntry() {
+      const text = document.getElementById('entry').value.trim();
+      if (!text) { showToast('Write something first', 'error'); return; }
+      const entries = DB.get('ha_journals') || [];
+      entries.push({ type: 'note', date: new Date().toISOString(), text, indicator: 'green' });
+      DB.set('ha_journals', entries);
+      document.getElementById('entry').value = '';
+      showToast('Saved', 'success');
+      render();
+    }
+
+    function addExample() {
+      document.getElementById('entry').value = 'Felt tired and had a mild headache. Drank more water. Symptoms improved after rest.';
+    }
+
+    function clearJournal() {
+      DB.set('ha_journals', []);
+      render();
+      showToast('Journal cleared', 'success');
+    }
+
+    render();
+  </script>
+</body>
+</html>

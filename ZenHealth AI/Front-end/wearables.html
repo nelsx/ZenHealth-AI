@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessories — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .hero{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin:12px 0 16px}
+    .kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+    .kpi .card{padding:14px}
+    .kpi-num{font-family:var(--font-display);font-weight:900;font-size:22px}
+    .kpi-label{font-size:12px;color:var(--text-2)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .danger{border-color:rgba(255,61,90,0.35);background:rgba(255,61,90,0.06)}
+    .ok{border-color:rgba(0,217,217,0.35);background:rgba(0,217,217,0.06)}
+    @media (max-width: 900px){.kpi{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Proactive health care</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-title">Accessories (Apple Watch demo)</div>
+      <div class="page-subtitle">Front-end prototype: show how Apple Watch vitals could auto-update the journal and escalate emergencies.</div>
+
+      <div class="hero">
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="font-family:var(--font-display);font-weight:900;font-size:16px;margin-bottom:6px">Connect Apple Watch</div>
+          <div style="color:var(--text-2);font-size:13px;line-height:1.75">
+            This is a UI-only showcase. A real integration would use HealthKit via a native companion app.
+            For sponsorship demos, we simulate incoming vitals and demonstrate safety escalation.
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn-primary" id="connect-btn" onclick="connectDemo()">⌚ Connect (demo) →</button>
+            <button class="btn btn-outline" id="sync-btn" onclick="toggleSync()" disabled>Start syncing</button>
+          </div>
+        </div>
+
+        <div class="card" id="escalation" style="flex:1;min-width:280px;display:none">
+          <div style="font-family:var(--font-display);font-weight:900;font-size:16px;margin-bottom:6px;color:var(--red)">Critical vitals detected</div>
+          <div style="color:var(--text-2);font-size:13px;line-height:1.75" id="escalation-text"></div>
+          <div class="row" style="margin-top:12px">
+            <a class="btn btn-primary" href="care.html" id="escalate-care">Find nearby care →</a>
+            <button class="btn btn-outline" onclick="dismissEscalation()">Dismiss</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi">
+        <div class="card" id="kpi-hr">
+          <div class="kpi-num" id="hr">—</div>
+          <div class="kpi-label">Heart rate (bpm)</div>
+        </div>
+        <div class="card" id="kpi-spo2">
+          <div class="kpi-num" id="spo2">—</div>
+          <div class="kpi-label">Blood oxygen (SpO₂ %)</div>
+        </div>
+        <div class="card" id="kpi-temp">
+          <div class="kpi-num" id="temp">—</div>
+          <div class="kpi-label">Temperature (°C)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:900;margin-bottom:8px">Recent vitals log</div>
+        <div id="log" style="color:var(--text-2);font-size:13px;line-height:1.9"></div>
+        <div class="row" style="margin-top:12px">
+          <a class="btn btn-outline" href="journal.html">Open journal</a>
+          <button class="btn btn-outline" onclick="clearLog()">Clear log</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    let connected = false;
+    let syncing = false;
+    let timer = null;
+
+    function connectDemo() {
+      connected = true;
+      document.getElementById('connect-btn').disabled = true;
+      document.getElementById('connect-btn').textContent = 'Connected ✓';
+      document.getElementById('sync-btn').disabled = false;
+      showToast('Demo device connected', 'success');
+      render();
+    }
+
+    function randomBetween(min, max) {
+      return Math.round((min + Math.random() * (max - min)) * 10) / 10;
+    }
+
+    function generateVitals() {
+      const hr = Math.round(randomBetween(55, 110));
+      const spo2 = Math.round(randomBetween(88, 100));
+      const temp = randomBetween(36.2, 39.4);
+      return { hr, spo2, temp, ts: Date.now() };
+    }
+
+    function isCritical(v) {
+      if (v.spo2 <= 90) return true;
+      if (v.hr >= 140 || v.hr <= 40) return true;
+      if (v.temp >= 40.0) return true;
+      return false;
+    }
+
+    function vitalsSummary(v) {
+      const parts = [];
+      if (v.spo2 <= 90) parts.push(`SpO₂ ${v.spo2}%`);
+      if (v.hr >= 140 || v.hr <= 40) parts.push(`HR ${v.hr} bpm`);
+      if (v.temp >= 40.0) parts.push(`Temp ${v.temp}°C`);
+      return parts.join(', ');
+    }
+
+    function pushVitals(v) {
+      const log = DB.get('ha_vitals_log') || [];
+      log.push(v);
+      DB.set('ha_vitals_log', log.slice(-30));
+
+      const journal = DB.get('ha_journals') || [];
+      journal.push({
+        type: 'vitals',
+        date: new Date(v.ts).toISOString(),
+        text: `Vitals update — HR ${v.hr} bpm, SpO₂ ${v.spo2}%, Temp ${v.temp}°C`,
+        indicator: isCritical(v) ? 'red' : 'green'
+      });
+      DB.set('ha_journals', journal.slice(-200));
+    }
+
+    function render() {
+      const latest = (DB.get('ha_vitals_log') || []).slice(-1)[0];
+      document.getElementById('hr').textContent = latest ? String(latest.hr) : '—';
+      document.getElementById('spo2').textContent = latest ? String(latest.spo2) : '—';
+      document.getElementById('temp').textContent = latest ? String(latest.temp) : '—';
+
+      document.getElementById('kpi-hr').classList.toggle('danger', latest && (latest.hr >= 140 || latest.hr <= 40));
+      document.getElementById('kpi-spo2').classList.toggle('danger', latest && latest.spo2 <= 90);
+      document.getElementById('kpi-temp').classList.toggle('danger', latest && latest.temp >= 40.0);
+
+      document.getElementById('kpi-hr').classList.toggle('ok', latest && !(latest.hr >= 140 || latest.hr <= 40));
+      document.getElementById('kpi-spo2').classList.toggle('ok', latest && !(latest.spo2 <= 90));
+      document.getElementById('kpi-temp').classList.toggle('ok', latest && !(latest.temp >= 40.0));
+
+      const log = (DB.get('ha_vitals_log') || []).slice(-8).reverse();
+      document.getElementById('log').innerHTML = log.length
+        ? log.map(v => `${new Date(v.ts).toLocaleString()}: HR ${v.hr} bpm • SpO₂ ${v.spo2}% • Temp ${v.temp}°C`).join('<br>')
+        : 'No vitals yet. Connect and start syncing.';
+
+      if (latest && isCritical(latest)) {
+        const esc = document.getElementById('escalation');
+        document.getElementById('escalation-text').textContent = `These values look dangerous (${vitalsSummary(latest)}). For sponsorship demos: this is where automated escalation would occur.`;
+        document.getElementById('escalate-care').href = `care.html?urgency=RED&dx=${encodeURIComponent('Critical vitals')}`;
+        esc.style.display = 'block';
+      }
+    }
+
+    function toggleSync() {
+      if (!connected) {
+        showToast('Connect the demo device first', 'error');
+        return;
+      }
+      syncing = !syncing;
+      const btn = document.getElementById('sync-btn');
+      btn.textContent = syncing ? 'Stop syncing' : 'Start syncing';
+
+      if (syncing) {
+        timer = setInterval(() => {
+          const v = generateVitals();
+          pushVitals(v);
+          render();
+        }, 3500);
+        showToast('Sync started (demo)', 'success');
+      } else {
+        if (timer) clearInterval(timer);
+        timer = null;
+        showToast('Sync stopped', 'success');
+      }
+    }
+
+    function dismissEscalation() {
+      document.getElementById('escalation').style.display = 'none';
+    }
+
+    function clearLog() {
+      DB.set('ha_vitals_log', []);
+      render();
+      showToast('Vitals log cleared', 'success');
+    }
+
+    render();
+  </script>
+</body>
+</html>

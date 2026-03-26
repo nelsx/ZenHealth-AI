@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zen History — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .history-wrap{display:flex;flex-direction:column;gap:12px}
+    .history-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .history-list{display:flex;flex-direction:column;gap:10px;max-height:62vh;overflow:auto;padding-right:6px}
+    .history-item{border:1px solid var(--border);background:var(--surface);border-radius:14px;padding:12px}
+    .history-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--text-3);font-size:12px;margin-bottom:6px}
+    .history-role{font-weight:700;color:var(--text-2)}
+    .history-role.user{color:var(--accent)}
+    .history-role.assistant{color:var(--text)}
+    .history-text{white-space:pre-wrap;line-height:1.45}
+    .empty-state{padding:16px;border:1px dashed var(--border);border-radius:14px;color:var(--text-2);background:var(--surface)}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Say Hi to zen</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="history.html" class="nav-link"><span class="nav-icon">🕘</span><span>History</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="nav-section">Account</div>
+      <a href="onboarding.html" class="nav-link"><span class="nav-icon">👤</span><span>My profile</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="chat-header">
+        <div>
+          <div class="page-title">Chat history</div>
+          <div class="page-subtitle">All your past interactions with Zen (stored locally on this device).</div>
+        </div>
+        <div class="history-controls">
+          <a class="btn btn-outline" href="doctor.html">← Back to chat</a>
+          <button class="btn btn-outline" onclick="clearHistory()">🗑 Clear history</button>
+        </div>
+      </div>
+
+      <div class="card history-wrap">
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    function formatTime(ts) {
+      try {
+        return new Date(ts).toLocaleString();
+      } catch {
+        return '';
+      }
+    }
+
+    function normalizeAssistantText(item) {
+      if (!item) return '';
+      const raw = String(item.content || '');
+      try {
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === 'object') {
+          const urgency = obj.urgency_level ? `Urgency: ${obj.urgency_level}` : '';
+          const dx = Array.isArray(obj.potential_diagnosis) ? obj.potential_diagnosis.join(', ') : '';
+          const steps = Array.isArray(obj.suggested_action) ? obj.suggested_action.join('\n') : '';
+          const disclaimer = obj.disclaimer || '';
+          return [
+            disclaimer,
+            urgency,
+            dx ? `Possible conditions: ${dx}` : '',
+            steps ? `Next steps:\n${steps}` : ''
+          ].filter(Boolean).join('\n\n');
+        }
+      } catch {}
+      return raw;
+    }
+
+    function renderHistory() {
+      const listEl = document.getElementById('history-list');
+      const history = DB.get('ha_chat_history') || [];
+
+      if (!history.length) {
+        listEl.innerHTML = `<div class="empty-state">No history yet. Go to <a href="doctor.html">Talk to Zen</a> and send a message.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = history
+        .slice()
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        .map(item => {
+          const role = item.role === 'user' ? 'user' : 'assistant';
+          const who = role === 'user' ? 'You' : 'Zen';
+          const text = role === 'assistant' ? normalizeAssistantText(item) : String(item.content || '');
+          return `
+            <div class="history-item">
+              <div class="history-meta">
+                <div class="history-role ${role}">${who}</div>
+                <div>${item.timestamp ? formatTime(item.timestamp) : ''}</div>
+              </div>
+              <div class="history-text">${escHtml(text)}</div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    function clearHistory() {
+      DB.set('ha_chat_history', []);
+      renderHistory();
+      showToast('History cleared', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initThemeToggle();
+      loadSidebarUser();
+      setActiveNav();
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) logoutBtn.addEventListener('click', Auth.logout);
+      renderHistory();
+    });
+  </script>
+</body>
+</html>

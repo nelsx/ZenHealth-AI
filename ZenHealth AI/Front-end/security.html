@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — ZenHealth AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:12px 0 16px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;font-size:13px;word-break:break-all;color:var(--text-2)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-2);font-size:12px;font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🩺</div>
+        <div class="sidebar-title">Zen</div>
+        <svg class="sidebar-ecg" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 9 L18 9 L24 9 L28 3 L33 12 L37 6 L42 9 L60 9 L66 9 L70 3 L75 12 L79 6 L84 9 L120 9" />
+        </svg>
+      </div>
+
+      <div class="nav-section">Have fun with it</div>
+      <a href="dashboard.html" class="nav-link"><span>My dashboard</span></a>
+      <a href="doctor.html" class="nav-link"><span class="nav-icon">🧑‍⚕️</span><span>Talk to Zen</span></a>
+      <a href="care.html" class="nav-link"><span class="nav-icon">🏥</span><span>Find care</span></a>
+      <a href="wearables.html" class="nav-link"><span class="nav-icon">⌚</span><span>Accessories</span></a>
+      <a href="journal.html" class="nav-link"><span class="nav-icon">📓</span><span>Health journal</span></a>
+
+      <div class="nav-section">Safety</div>
+      <a href="emergency.html" class="nav-link"><span class="nav-icon">🆘</span><span>Emergency contacts</span></a>
+      <a href="security.html" class="nav-link"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user" style="margin-top:8px">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
+            <div class="sidebar-user-sub" id="sidebar-user-sub"></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="nav-link" style="width:100%;margin-top:8px">
+          <span class="nav-icon">🚪</span><span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-title">Settings</div>
+      <div class="page-subtitle">Customize the app look & security. Front-end demo controls.</div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row">
+          <div>
+            <div style="font-family:var(--font-display);font-weight:900">Appearance</div>
+            <div style="color:var(--text-2);font-size:13px;line-height:1.75">Customize ZenHealth AI’s accent color for a premium feel.</div>
+          </div>
+          <span class="pill" id="hue-pill">Accent hue: —</span>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div class="input-wrap" style="margin:0;flex:1;min-width:240px">
+            <label class="input-label">Theme mode</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-outline" type="button" id="mode-dark" onclick="setThemeMode('dark')">Dark</button>
+              <button class="btn btn-outline" type="button" id="mode-light" onclick="setThemeMode('light')">Light</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:6px">Saved on this device.</div>
+          </div>
+        </div>
+
+        <div class="input-wrap" style="margin-top:8px">
+          <label class="input-label">Accent hue</label>
+          <input class="input" type="range" id="hue" min="0" max="360" value="174" />
+          <div class="mono" id="hue-val">—</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" type="button" onclick="setPreset(174)">Zen Teal</button>
+          <button class="btn btn-outline" type="button" onclick="setPreset(215)">Royal Blue</button>
+          <button class="btn btn-outline" type="button" onclick="setPreset(280)">Violet</button>
+          <button class="btn btn-outline" type="button" onclick="setPreset(18)">Warm Red</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row">
+          <div>
+            <div style="font-family:var(--font-display);font-weight:900">Account display</div>
+            <div style="color:var(--text-2);font-size:13px;line-height:1.75">Set a nickname, update your email, and control whether your email is shown in the sidebar.</div>
+          </div>
+        </div>
+
+        <div class="input-wrap" style="margin-top:8px">
+          <label class="input-label">Nickname (display name)</label>
+          <input class="input" id="nickname" placeholder="e.g. Zee" />
+          <div style="font-size:12px;color:var(--text-3)">Your full name stays the same. Nickname is used across pages.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn btn-outline" onclick="saveNickname()">Save nickname</button>
+            <button class="btn btn-outline" onclick="clearNickname()">Reset to full name</button>
+          </div>
+        </div>
+
+        <div class="input-wrap" style="margin-top:8px">
+          <label class="input-label">Email</label>
+          <input class="input" id="email" placeholder="you@example.com" />
+          <div style="font-size:12px;color:var(--text-3)">Use lowercase only. This is a front-end demo update.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn btn-outline" onclick="saveEmail()">Update email</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:4px">
+          <div>
+            <div style="font-weight:800">Hide email on pages</div>
+            <div style="color:var(--text-2);font-size:13px;line-height:1.75">When enabled, your email will be hidden in the sidebar user bar.</div>
+          </div>
+          <button class="btn btn-outline" type="button" id="toggle-hide" onclick="toggleHideEmail()">—</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row">
+          <div>
+            <div style="font-family:var(--font-display);font-weight:900">Two‑factor authentication</div>
+            <div style="color:var(--text-2);font-size:13px;line-height:1.75">Use Google Authenticator (or similar) to generate 6‑digit codes.</div>
+          </div>
+          <span class="pill" id="status">Status: —</span>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="input-wrap">
+            <label class="input-label">Authenticator secret</label>
+            <div class="mono" id="secret">—</div>
+          </div>
+
+          <div class="input-wrap">
+            <label class="input-label">Authenticator link</label>
+            <a class="mono" id="otpauth" href="#" target="_blank" rel="noreferrer">—</a>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="enable2FA()">Enable </button>
+            <button class="btn btn-outline" onclick="disable2FA()">Disable</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div style="font-family:var(--font-display);font-weight:900;margin-bottom:6px">Test a code</div>
+          <div style="color:var(--text-2);font-size:13px;margin-bottom:10px">Enter the 6‑digit code from Google Authenticator to verify setup.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input class="input" id="code" placeholder="123456" style="max-width:180px" />
+            <button class="btn btn-outline" onclick="testCode()">Verify</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    function syncThemeModeUI() {
+      const s = Settings.get();
+      const mode = s.theme === 'light' ? 'light' : 'dark';
+      const d = document.getElementById('mode-dark');
+      const l = document.getElementById('mode-light');
+      if (d && l) {
+        d.style.borderColor = mode === 'dark' ? 'var(--accent)' : 'var(--border)';
+        l.style.borderColor = mode === 'light' ? 'var(--accent)' : 'var(--border)';
+      }
+    }
+
+    function setThemeMode(mode) {
+      Settings.set({ theme: mode === 'light' ? 'light' : 'dark' });
+      applyTheme();
+      syncThemeModeUI();
+      showToast('Theme mode updated', 'success');
+    }
+
+    function syncHueUI() {
+      const s = Settings.get();
+      const hue = Number.isFinite(Number(s.themeHue)) ? Number(s.themeHue) : 174;
+      const hueEl = document.getElementById('hue');
+      hueEl.value = String(hue);
+      document.getElementById('hue-val').textContent = `hsl(${hue}, 70%, 55%)`;
+      document.getElementById('hue-pill').textContent = `Accent hue: ${hue}`;
+    }
+
+    function setPreset(h) {
+      Settings.set({ themeHue: h });
+      applyTheme();
+      syncHueUI();
+      showToast('Theme updated', 'success');
+    }
+
+    document.getElementById('hue').addEventListener('input', (e) => {
+      const h = parseInt(e.target.value, 10);
+      Settings.set({ themeHue: h });
+      applyTheme();
+      syncHueUI();
+    });
+
+    function updateUI(user) {
+      document.getElementById('status').textContent = `Status: ${user.twofaEnabled ? 'Enabled' : 'Disabled'}`;
+      document.getElementById('secret').textContent = user.twofaSecret || '—';
+      const label = encodeURIComponent('ZenHealth AI (' + (user.email || 'user') + ')');
+      const issuer = encodeURIComponent('ZenHealth AI');
+      const secret = encodeURIComponent(user.twofaSecret || '');
+      const url = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&digits=6&period=30`;
+      const a = document.getElementById('otpauth');
+      a.textContent = url;
+      a.href = url;
+    }
+
+    function enable2FA() {
+      const user = Auth.getUser();
+      const secret = generate2FASecret();
+      const updated = AuthDB.updateUser(user.uid, { twofaEnabled: true, twofaSecret: secret });
+      showToast('2FA enabled (demo). Add the secret to Google Authenticator.', 'success');
+      updateUI(updated);
+    }
+
+    function disable2FA() {
+      const user = Auth.getUser();
+      const updated = AuthDB.updateUser(user.uid, { twofaEnabled: false });
+      showToast('2FA disabled', 'success');
+      updateUI(updated);
+    }
+
+    async function testCode() {
+      const user = Auth.getUser();
+      const code = document.getElementById('code').value;
+      if (!user.twofaSecret) { showToast('No secret found', 'error'); return; }
+      const ok = await verifyTotp(user.twofaSecret, code);
+      showToast(ok ? 'Code verified ✓' : 'Invalid code', ok ? 'success' : 'error');
+    }
+
+    syncThemeModeUI();
+    syncHueUI();
+    updateUI(Auth.getUser());
+
+    function validLowerEmail(email) {
+      const e = String(email || '').trim();
+      if (!e.includes('@')) return false;
+      if (e !== e.toLowerCase()) return false;
+      return true;
+    }
+
+    function syncAccountUI() {
+      const user = Auth.getUser();
+      if (!user?.uid) return;
+      const prefs = UserPrefs.get(user.uid);
+      const nickEl = document.getElementById('nickname');
+      const emailEl = document.getElementById('email');
+      if (nickEl) nickEl.value = prefs.nickname || '';
+      if (emailEl) emailEl.value = user.email || '';
+      const btn = document.getElementById('toggle-hide');
+      if (btn) btn.textContent = prefs.hideEmail ? 'Enabled' : 'Disabled';
+      loadSidebarUser();
+    }
+
+    function saveNickname() {
+      const user = Auth.getUser();
+      const nick = String(document.getElementById('nickname').value || '').trim();
+      if (!user?.uid) return;
+      UserPrefs.set(user.uid, { nickname: nick });
+      syncAccountUI();
+      showToast('Nickname saved', 'success');
+    }
+
+    function clearNickname() {
+      const user = Auth.getUser();
+      if (!user?.uid) return;
+      UserPrefs.set(user.uid, { nickname: '' });
+      syncAccountUI();
+      showToast('Nickname reset', 'success');
+    }
+
+    function toggleHideEmail() {
+      const user = Auth.getUser();
+      if (!user?.uid) return;
+      const prefs = UserPrefs.get(user.uid);
+      UserPrefs.set(user.uid, { hideEmail: !prefs.hideEmail });
+      syncAccountUI();
+      showToast('Privacy setting updated', 'success');
+    }
+
+    function saveEmail() {
+      const user = Auth.getUser();
+      if (!user?.uid) return;
+      const email = String(document.getElementById('email').value || '').trim();
+      if (!validLowerEmail(email)) {
+        showToast('Email must contain @ and be lowercase', 'error');
+        return;
+      }
+      if (AuthDB.getUserByEmail(email) && AuthDB.getUserByEmail(email).uid !== user.uid) {
+        showToast('Email already registered', 'error');
+        return;
+      }
+      const updated = AuthDB.updateUser(user.uid, { email });
+      syncAccountUI();
+      updateUI(updated);
+      showToast('Email updated', 'success');
+    }
+
+    syncAccountUI();
+  </script>
+</body>
+</html>
